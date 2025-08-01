@@ -47,6 +47,10 @@ dependencies:
   uuid: ^4.5.1
   get: ^4.7.2
   
+flutter_icons:
+  android: true
+  image_path: "lib/assets/images/icon-g.png"
+
 
 dev_dependencies:
   flutter_test:
@@ -64,7 +68,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
+  assets:
+    - lib/assets/images/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
