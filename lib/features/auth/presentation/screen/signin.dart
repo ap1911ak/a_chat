@@ -92,6 +92,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         SizedBox(height: 30),
                         TextFormField(
+                          initialValue:"aa.@gmail.com", ////For Test
                           decoration: InputDecoration(
                               labelText: "Email ",
                               border: OutlineInputBorder()),
@@ -107,10 +108,12 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         SizedBox(height: 15),
                         TextFormField(
+                          initialValue:"123456", ////For Test
                           decoration: InputDecoration(
                               labelText: "Password",
                               border: OutlineInputBorder(),
-                              suffixIcon: Icon(Icons.visibility_off)), // Placeholder for show/hide password
+                              suffixIcon: Icon(Icons.visibility_off))
+                              , // Placeholder for show/hide password
                           validator: RequiredValidator(
                               errorText: "Password is required").call,
                           obscureText: true,
