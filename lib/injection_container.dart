@@ -19,6 +19,15 @@ import 'package:a_chat/features/chat/domain/usecases/get_messages_usecase.dart';
 import 'package:a_chat/features/chat/domain/usecases/send_message_usecase.dart';
 import 'package:a_chat/features/chat/presentation/bloc/chat_bloc.dart';
 
+
+import 'package:a_chat/features/contacts/data/datasources/contact_remote_datasource.dart';
+import 'package:a_chat/features/contacts/data/repositories/contact_repository_impl.dart';
+import 'package:a_chat/features/contacts/domain/repositories/contact_repository.dart';
+import 'package:a_chat/features/contacts/domain/usecases/add_contact_usecase.dart';
+import 'package:a_chat/features/contacts/domain/usecases/get_contacts_usecase.dart';
+import 'package:a_chat/features/contacts/presentation/bloc/contacts_bloc.dart';
+
+
 // ignore: unused_import
 import 'package:a_chat/core/usecase/usecase.dart'; 
 // ignore: unused_import
@@ -78,6 +87,22 @@ sl.registerFactory(() => ChatBloc(
       () => ChatRemoteDataSourceImpl(firestore: sl(), firebaseAuth: sl()));
 
 
+
+  // Features - Contacts
+  sl.registerLazySingleton(() => GetContactsUseCase(sl()));
+  sl.registerLazySingleton(() => AddContactUseCase(sl()));
+  sl.registerLazySingleton<ContactRepository>(
+    () => ContactRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<ContactRemoteDataSource>(
+    () => ContactRemoteDataSourceImpl(firestore: sl(), firebaseAuth: sl()),
+  );
+  
+  // Bloc
+  sl.registerFactory(() => ContactsBloc(
+    getContactsUseCase: sl(),
+    addContactUseCase: sl(),
+  ));
 
 
    // External (จำเป็นสำหรับ Firebase และอื่นๆ)
