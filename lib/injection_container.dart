@@ -11,14 +11,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:a_chat/features/chat/data/datasources/chat_remote_datasource.dart'; 
+import 'package:a_chat/features/chat/data/datasources/chat_remote_datasource.dart';
 import 'package:a_chat/features/chat/data/repositories/chat_repository_impl.dart';
 import 'package:a_chat/features/chat/domain/repositories/chat_repository.dart';
 import 'package:a_chat/features/chat/domain/usecases/get_conversations_usecase.dart';
 import 'package:a_chat/features/chat/domain/usecases/get_messages_usecase.dart';
 import 'package:a_chat/features/chat/domain/usecases/send_message_usecase.dart';
 import 'package:a_chat/features/chat/presentation/bloc/chat_bloc.dart';
-
 
 import 'package:a_chat/features/contacts/data/datasources/contact_remote_datasource.dart';
 import 'package:a_chat/features/contacts/data/repositories/contact_repository_impl.dart';
@@ -27,14 +26,10 @@ import 'package:a_chat/features/contacts/domain/usecases/add_contact_usecase.dar
 import 'package:a_chat/features/contacts/domain/usecases/get_contacts_usecase.dart';
 import 'package:a_chat/features/contacts/presentation/bloc/contacts_bloc.dart';
 
-
 // ignore: unused_import
-import 'package:a_chat/core/usecase/usecase.dart'; 
+import 'package:a_chat/core/usecase/usecase.dart';
 // ignore: unused_import
-import 'package:a_chat/core/error/failures.dart'; 
-
-
-
+import 'package:a_chat/core/error/failures.dart';
 
 final sl = GetIt.instance; // sl = Service Locator
 
@@ -65,13 +60,14 @@ Future<void> init() async {
     () => AuthRemoteDataSourceImpl(firebaseAuth: sl()),
   );
 
-
   // Features - Chat
-sl.registerFactory(() => ChatBloc(
-        getConversationsUseCase: sl(),
-        getMessagesUseCase: sl(),
-        sendMessageUseCase: sl(),
-      ));
+  sl.registerFactory(
+    () => ChatBloc(
+      getConversationsUseCase: sl(),
+      getMessagesUseCase: sl(),
+      sendMessageUseCase: sl(),
+    ),
+  );
 
   // Use cases
   sl.registerLazySingleton(() => GetConversationsUseCase(sl()));
@@ -80,13 +76,13 @@ sl.registerFactory(() => ChatBloc(
 
   // Repository
   sl.registerLazySingleton<ChatRepository>(
-      () => ChatRepositoryImpl(remoteDataSource: sl()));
+    () => ChatRepositoryImpl(remoteDataSource: sl()),
+  );
 
   // Data sources
   sl.registerLazySingleton<ChatRemoteDataSource>(
-      () => ChatRemoteDataSourceImpl(firestore: sl(), firebaseAuth: sl()));
-
-
+    () => ChatRemoteDataSourceImpl(firestore: sl(), firebaseAuth: sl()),
+  );
 
   // Features - Contacts
   sl.registerLazySingleton(() => GetContactsUseCase(sl()));
@@ -97,17 +93,16 @@ sl.registerFactory(() => ChatBloc(
   sl.registerLazySingleton<ContactRemoteDataSource>(
     () => ContactRemoteDataSourceImpl(firestore: sl(), firebaseAuth: sl()),
   );
-  
+
   // Bloc
-  sl.registerFactory(() => ContactsBloc(
-    getContactsUseCase: sl(),
-    addContactUseCase: sl(),
-  ));
+  sl.registerFactory(
+    () => ContactsBloc(getContactsUseCase: sl(), addContactUseCase: sl()),
+  );
 
-
-   // External (จำเป็นสำหรับ Firebase และอื่นๆ)
+  // External (จำเป็นสำหรับ Firebase และอื่นๆ)
   sl.registerLazySingleton(() => FirebaseAuth.instance);
   sl.registerLazySingleton(() => FirebaseFirestore.instance);
-  sl.registerLazySingleton(() => const Uuid()); // ถ้า ChatRemoteDataSource ใช้ UUID     
-
+  sl.registerLazySingleton(
+    () => const Uuid(),
+  ); // ถ้า ChatRemoteDataSource ใช้ UUID
 }

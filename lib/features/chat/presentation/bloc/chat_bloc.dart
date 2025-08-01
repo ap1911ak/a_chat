@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // To get current user ID
 import 'package:uuid/uuid.dart'; // For generating message IDs
 import '../../../../core/error/failures.dart';
+// ignore: unused_import
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';

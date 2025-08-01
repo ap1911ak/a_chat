@@ -1,3 +1,4 @@
+// ignore: unused_import
 import 'package:a_chat/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:a_chat/features/contacts/presentation/bloc/contacts_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';

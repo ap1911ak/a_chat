@@ -2,6 +2,7 @@ import 'package:a_chat/core/error/exceptions.dart';
 import 'package:a_chat/features/contacts/data/models/contact_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// ignore: unused_import
 import 'package:a_chat/model/profile.dart';
 
 abstract class ContactRemoteDataSource {

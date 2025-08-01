@@ -5,6 +5,7 @@ import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../datasources/chat_remote_datasource.dart';
+// ignore: unused_import
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
 

@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // To get current user ID
 import '../../../../core/error/failures.dart';
+// ignore: unused_import
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entities/contact.dart';
 import '../../domain/usecases/add_contact_usecase.dart';

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:a_chat/features/contacts/domain/entities/contact.dart';
 import 'package:a_chat/features/contacts/presentation/bloc/contacts_bloc.dart';
-import 'package:a_chat/features/contacts/presentation/widgets/contact_list_item.dart';
+import 'package:a_chat/features/contacts/presentation/screen/widgets/contact_list_item.dart';
 import 'package:a_chat/injection_container.dart' as sl;
 
 class ContactsScreen extends StatefulWidget {
