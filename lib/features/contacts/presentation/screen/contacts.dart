@@ -20,13 +20,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
   void initState() {
     super.initState();
     final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      // Dispatch event to load conversations when the page initializes
-      BlocProvider.of<ContactsBloc>(context).add(GetContactsEvent(currentUser.uid));
-    }
-  // ignore: avoid_print
-  print("UID : ${GetContactsEvent(currentUser!.uid)}");
+    // ignore: avoid_print
+    print("UID : ${GetContactsEvent(currentUser!.uid)}");
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,13 +33,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
           IconButton(
             icon: const Icon(Icons.person_add),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(
-                                          builder: (context) =>
-                                              BlocProvider<ContactsBloc>(
-                                                create: (_) => sl.sl<ContactsBloc>(),
-                                                child: NewContactScreen(),
-                                              )));
-              
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BlocProvider<ContactsBloc>(
+                    create: (_) => sl.sl<ContactsBloc>(),
+                    child: NewContactScreen(),
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -51,12 +50,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
         builder: (context, state) {
           if (state is ContactsLoaded) {
             if (state.contacts.isEmpty) {
-              return const Center(child: Text("No contacts yet. Add a new contact."));
+              return const Center(
+                child: Text("No contacts yet. Add a new contact."),
+              );
             }
             // Group contacts by first letter (for UI like the image)
             final Map<String, List<ContactEntity>> groupedContacts = {};
             for (var contact in state.contacts) {
-              final firstLetter = contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '#';
+              final firstLetter = contact.name.isNotEmpty
+                  ? contact.name[0].toUpperCase()
+                  : '#';
               if (!groupedContacts.containsKey(firstLetter)) {
                 groupedContacts[firstLetter] = [];
               }
@@ -64,7 +67,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
             }
 
             final sortedKeys = groupedContacts.keys.toList()..sort();
-            
+
             return ListView.builder(
               itemCount: sortedKeys.length,
               itemBuilder: (context, index) {
@@ -74,7 +77,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
                       child: Text(
                         key,
                         style: const TextStyle(
@@ -84,31 +90,31 @@ class _ContactsScreenState extends State<ContactsScreen> {
                         ),
                       ),
                     ),
-                    ...contactsInGroup.map((contact) => ContactListItem(
-                      contact: contact,
-                      onTap: () {
-                        // When a contact is tapped, navigate to the MessagePage
-                        // You'll need to create a conversation ID or find an existing one
-                        // For simplicity, let's create a dummy conversation ID for now
-                        // In a real app, you'd check if a conversation exists or create one.
-                        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-                        if (currentUserId != null) {
-                          final participants = [currentUserId, contact.id]..sort();
-                          final conversationId = participants.join('_');
+                    ...contactsInGroup.map(
+                      (contact) => ContactListItem(
+                        contact: contact,
+                        onTap: () {
+                          final currentUserId =
+                              FirebaseAuth.instance.currentUser?.uid;
+                          if (currentUserId != null) {
+                            final participants = [currentUserId, contact.id]
+                              ..sort();
+                            final conversationId = participants.join('_');
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MessageScreen(
-                                conversationId: conversationId,
-                                otherParticipantId: contact.id,
-                                otherParticipantName: contact.name,
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MessageScreen(
+                                  conversationId: conversationId,
+                                  otherParticipantId: contact.id,
+                                  otherParticipantName: contact.name,
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                      },
-                    )),
+                            );
+                          }
+                        },
+                      ),
+                    ),
                   ],
                 );
               },

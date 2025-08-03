@@ -42,10 +42,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    final result = await signInUseCase(SignInParams(
-      email: event.email,
-      password: event.password,
-    ));
+    final result = await signInUseCase(
+      SignInParams(email: event.email, password: event.password),
+    );
     result.fold(
       (failure) => emit(AuthError(_mapFailureToMessage(failure))),
       (user) => emit(AuthAuthenticated(user)),
@@ -57,10 +56,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    final result = await signUpUseCase(SignUpParams(
-      email: event.email,
-      password: event.password,
-    ));
+    final result = await signUpUseCase(
+      SignUpParams(email: event.email, password: event.password),
+    );
     result.fold(
       (failure) => emit(AuthError(_mapFailureToMessage(failure))),
       (user) => emit(AuthAuthenticated(user)),
@@ -79,10 +77,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
-  void _onAuthUserChanged(
-    AuthUserChanged event,
-    Emitter<AuthState> emit,
-  ) {
+  void _onAuthUserChanged(AuthUserChanged event, Emitter<AuthState> emit) {
     if (event.user != null) {
       emit(AuthAuthenticated(event.user!));
     } else {
@@ -95,6 +90,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // ignore: type_literal_in_constant_pattern
       case ServerFailure:
         return (failure as ServerFailure).message;
+      case AuthFailure: // เพิ่มการจัดการ AuthFailure
+        return (failure as AuthFailure).message;
       default:
         return 'Unexpected error';
     }

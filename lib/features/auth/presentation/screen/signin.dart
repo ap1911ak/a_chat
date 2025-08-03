@@ -92,7 +92,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         SizedBox(height: 30),
                         TextFormField(
-                          initialValue:"aa@gmail.com", ////For Test
+                          //initialValue:"aa@gmail.com", ////For Test
                           decoration: InputDecoration(
                               labelText: "Email ",
                               border: OutlineInputBorder()),
@@ -108,7 +108,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         SizedBox(height: 15),
                         TextFormField(
-                          initialValue:"123456", ////For Test
+                          //initialValue:"123456", ////For Test
                           decoration: InputDecoration(
                               labelText: "Password",
                               border: OutlineInputBorder(),

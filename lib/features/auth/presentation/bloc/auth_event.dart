@@ -35,5 +35,5 @@ class AuthUserChanged extends AuthEvent {
   const AuthUserChanged(this.user);
 
   @override
-  List<Object> get props => [?user];
+   List<Object> get props => user != null ? [user!] : []; // แก้ไข props
 }

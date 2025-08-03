@@ -1,7 +1,7 @@
 import 'package:a_chat/core/error/exceptions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:uuid/uuid.dart'; // For generating message IDs
+import 'package:uuid/uuid.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
 
@@ -21,8 +21,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   @override
   Stream<List<ConversationModel>> getConversations(String userId) {
     try {
-      // ignore: unused_local_variable
-      final String currentUserId = firebaseAuth.currentUser!.uid; 
+      // ignore: avoid_print
+      print("DataSource: Getting conversations for user: $userId"); // เพิ่ม debug log
       
       return firestore
           .collection('conversations')
@@ -30,32 +30,69 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           .orderBy('timestamp', descending: true)
           .snapshots()
           .map((snapshot) {
-        return snapshot.docs
-            .map((doc) => ConversationModel.fromFirestore(doc, userId))
+        // ignore: avoid_print
+        print("DataSource: Firestore snapshot received with ${snapshot.docs.length} documents"); // เพิ่ม debug log
+        
+        final conversations = snapshot.docs
+            .map((doc) {
+              try {
+                // ignore: avoid_print
+                print("DataSource: Processing document: ${doc.id}"); // เพิ่ม debug log
+                // ignore: avoid_print
+                print("DataSource: Document data: ${doc.data()}"); // เพิ่ม debug log
+                return ConversationModel.fromFirestore(doc, userId);
+              } catch (e) {
+                // ignore: avoid_print
+                print("DataSource: Error processing document ${doc.id}: $e"); // เพิ่ม debug log
+                rethrow;
+              }
+            })
             .toList();
+            
+        // ignore: avoid_print
+        print("DataSource: Successfully processed ${conversations.length} conversations"); // เพิ่ม debug log
+        return conversations;
       });
     } catch (e) {
-      throw ServerException(message:e.toString());
+      // ignore: avoid_print
+      print("DataSource: Error in getConversations: $e"); // เพิ่ม debug log
+      throw ServerException(message: e.toString());
     }
   }
 
- @override
+  @override
   Stream<List<MessageModel>> getMessages(String conversationID) {
-  try {
+    try {
       final String currentUserId = firebaseAuth.currentUser!.uid;
+      // ignore: avoid_print
+      print("DataSource: Getting messages for conversation: $conversationID"); // เพิ่ม debug log
+      
       return firestore
-        .collection('conversations')
-        .doc(conversationID)
-        .collection('messages')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) => MessageModel.fromFirestore(doc, currentUserId)).toList();
-        });
-  } catch (e) {
-    throw ServerException(message:e.toString());
+          .collection('conversations')
+          .doc(conversationID)
+          .collection('messages')
+          .orderBy('timestamp', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        // ignore: avoid_print
+        print("DataSource: Messages snapshot received with ${snapshot.docs.length} documents"); // เพิ่ม debug log
+        
+        return snapshot.docs.map((doc) {
+          try {
+            return MessageModel.fromFirestore(doc, currentUserId);
+          } catch (e) {
+            // ignore: avoid_print
+            print("DataSource: Error processing message ${doc.id}: $e"); // เพิ่ม debug log
+            rethrow;
+          }
+        }).toList();
+      });
+    } catch (e) {
+      // ignore: avoid_print
+      print("DataSource: Error in getMessages: $e"); // เพิ่ม debug log
+      throw ServerException(message: e.toString());
+    }
   }
-}
 
   @override
   Future<void> sendMessage(MessageModel message) async {
@@ -65,10 +102,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         throw ServerException(message: 'User not logged in.');
       }
 
+      // ignore: avoid_print
+      print("DataSource: Sending message from $currentUserId to ${message.receiverId}"); // เพิ่ม debug log
+
       // Determine conversation ID based on participants
-      // For simplicity, assume conversation ID is a combination of sorted user IDs
       final participants = [message.senderId, message.receiverId]..sort();
       final conversationId = participants.join('_');
+      // ignore: avoid_print
+      print("DataSource: Conversation ID: $conversationId"); // เพิ่ม debug log
 
       final conversationRef = firestore.collection('conversations').doc(conversationId);
       final messageId = uuid.v4();
@@ -88,17 +129,23 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             'timestamp': message.timestamp,
             'participants': participants,
             'participantDetails': {
-              message.senderId: {'name': firebaseAuth.currentUser?.email ?? 'Unknown'}, // Assuming email as name
+              message.senderId: {'name': firebaseAuth.currentUser?.email ?? 'Unknown'},
               message.receiverId: {'name': 'Other User Name'}, // You'll need to fetch this from contacts
             },
           },
-          SetOptions(merge: true), // Merge to update existing fields
+          SetOptions(merge: true),
         );
       });
+      
+      // ignore: avoid_print
+      print("DataSource: Message sent successfully"); // เพิ่ม debug log
     } on FirebaseException catch (e) {
-      // ignore: prefer_interpolation_to_compose_strings
-      throw ServerException(message: e.toString()+'Failed to send message.');
+      // ignore: avoid_print
+      print("DataSource: FirebaseException: ${e.message}"); // เพิ่ม debug log
+      throw ServerException(message: '${e.message} Failed to send message.');
     } catch (e) {
+      // ignore: avoid_print
+      print("DataSource: General Exception: $e"); // เพิ่ม debug log
       throw ServerException(message: e.toString());
     }
   }

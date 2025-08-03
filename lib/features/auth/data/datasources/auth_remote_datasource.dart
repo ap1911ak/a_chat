@@ -2,6 +2,8 @@
 import 'package:a_chat/core/error/exceptions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 abstract class AuthRemoteDataSource {
   Future<UserModel> signIn(String email, String password);
@@ -12,7 +14,9 @@ abstract class AuthRemoteDataSource {
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth firebaseAuth;
-  AuthRemoteDataSourceImpl({required this.firebaseAuth});
+  final FirebaseFirestore firestore;
+  AuthRemoteDataSourceImpl({required this.firebaseAuth, required this.firestore});
+  
 
   @override
   Future<UserModel> signIn(String email, String password) async {
@@ -24,6 +28,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (userCredential.user == null) {
         throw AuthException("No user found after sign in.");
       }
+      // ตรวจสอบว่ามี user document หรือไม่ ถ้าไม่มีให้สร้าง
+      final user = userCredential.user!;
+      final userDoc = await firestore.collection('users').doc(user.uid).get();
+      
+      if (!userDoc.exists) {
+        await firestore.collection('users').doc(user.uid).set({
+          'email': email,
+          'username': email.split('@')[0],
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
       return UserModel.fromFirebaseUser(userCredential.user!);
     } on FirebaseAuthException catch (e) {
       throw AuthException(e.message ?? 'Sign In Failed');
@@ -40,6 +56,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (userCredential.user == null) {
         throw AuthException("No user found after sign up.");
       }
+      // เพิ่มการสร้าง user document ใน Firestore
+      final user = userCredential.user!;
+      await firestore.collection('users').doc(user.uid).set({
+        'email': email,
+        'username': email.split('@')[0], // ใช้ส่วนหน้า @ เป็น username
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
       return UserModel.fromFirebaseUser(userCredential.user!);
     } on FirebaseAuthException catch (e) {
       throw AuthException(e.message ?? 'Sign Up Failed');

@@ -2,6 +2,7 @@ import 'package:a_chat/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:a_chat/features/chat/domain/entities/conversation.dart';
 import 'package:a_chat/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:a_chat/features/chat/presentation/screen/message.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,25 +17,24 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
-  int _selectedIndex = 0; // For BottomNavigationBar
+  int _selectedIndex = 0;
 
   @override
-  void initState() {
-    super.initState();
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      // Dispatch event to load conversations when the page initializes
-      BlocProvider.of<ChatBloc>(context).add(GetConversationsEvent(currentUser.uid));
-    }
-  // ignore: avoid_print
-  print("UID : ${GetConversationsEvent(currentUser!.uid)}");
+void initState() {
+  super.initState();
+  final currentUser = FirebaseAuth.instance.currentUser;
+  if (currentUser != null) {
+    print("Loading conversations for user: ${currentUser.uid}");
+    BlocProvider.of<ChatBloc>(context).add(GetConversationsEvent(currentUser.uid));
+  } else {
+    print("No current user found!");
   }
+}
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-    // Navigate based on selected index
     if (index == 0) {
       // Stay on Chat List Page
     } else if (index == 1) {
@@ -56,22 +56,50 @@ class _ChatListScreenState extends State<ChatListScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () {
               BlocProvider.of<AuthBloc>(context).add(AuthSignOutRequested());
-              // Navigate back to HomePage (login/register) after logout
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ChatListScreen())); // Or HomePage
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
             },
           ),
         ],
       ),
-      body: BlocBuilder<ChatBloc, ChatState>(
+      body: BlocConsumer<ChatBloc, ChatState>( // เปลี่ยนเป็น BlocConsumer เพื่อ listen error
+        listener: (context, state) {
+          if (state is ChatError) {
+            print("ChatListScreen: Error received: ${state.message}"); // เพิ่ม debug log
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${state.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
         builder: (context, state) {
-          // ignore: avoid_print
-          print("ChatLoading $ChatLoading");
+          print("ChatListScreen: Current state: ${state.runtimeType}"); // เพิ่ม debug log
 
           if (state is ChatLoading) {
+            print("ChatListScreen: Showing loading indicator"); // เพิ่ม debug log
             return const Center(child: CircularProgressIndicator());
           } else if (state is ConversationsLoaded) {
+            print("ChatListScreen: Conversations loaded: ${state.conversations.length}"); // เพิ่ม debug log
             if (state.conversations.isEmpty) {
-              return const Center(child: Text("No conversations yet. Start a new chat from Contacts."));
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      "No conversations yet",
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Start a new chat from Contacts",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
             }
             return ListView.builder(
               itemCount: state.conversations.length,
@@ -80,6 +108,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 return ConversationListItem(
                   conversation: conversation,
                   onTap: () {
+                    print("ChatListScreen: Navigating to conversation: ${conversation.id}"); // เพิ่ม debug log
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -95,9 +124,40 @@ class _ChatListScreenState extends State<ChatListScreen> {
               },
             );
           } else if (state is ChatError) {
-            return Center(child: Text("Error: ${state.message}"));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text("Error: ${state.message}"),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      final currentUser = FirebaseAuth.instance.currentUser;
+                      if (currentUser != null) {
+                        BlocProvider.of<ChatBloc>(context).add(GetConversationsEvent(currentUser.uid));
+                      }
+                    },
+                    child: const Text("Retry"),
+                  ),
+                ],
+              ),
+            );
           }
-          return const Center(child: Text("Welcome to Chat App!"));
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.chat, size: 64, color: Colors.green),
+                SizedBox(height: 16),
+                Text(
+                  "Welcome to Chat App!",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          );
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -166,4 +226,40 @@ class ConversationListItem extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _checkFirebaseConnection(bool mounted, BuildContext context) async {
+    try {
+      // ทดสอบ connection โดยอ่าน collection ง่ายๆ
+      final testQuery = await FirebaseFirestore.instance
+          .collection('conversations')
+          .limit(1)
+          .get();
+      
+      print("Firebase connection test: ${testQuery.docs.length} documents found");
+      
+      // ตรวจสอบ current user
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        print("Current user authenticated: ${currentUser.uid}");
+        print("User email: ${currentUser.email}");
+        
+        // ทดสอบ query ที่ใช้จริง
+        final userConversations = await FirebaseFirestore.instance
+            .collection('conversations')
+            .where('participants', arrayContains: currentUser.uid)
+            .get();
+            
+        print("User conversations found: ${userConversations.docs.length}");
+        
+        // Dispatch event หลังจากตรวจสอบแล้ว
+        if (mounted) {
+          BlocProvider.of<ChatBloc>(context).add(GetConversationsEvent(currentUser.uid));
+        }
+      } else {
+        print("No authenticated user found");
+      }
+    } catch (e) {
+      print("Firebase connection error: $e");
+    }
 }

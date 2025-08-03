@@ -56,9 +56,12 @@ Future<void> init() async {
   );
 
   // Data Sources
-  sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(firebaseAuth: sl()),
-  );
+ sl.registerLazySingleton<AuthRemoteDataSource>(
+  () => AuthRemoteDataSourceImpl(
+    firebaseAuth: sl(),
+    firestore: sl(), // เพิ่ม firestore parameter
+  ),
+);
 
   // Features - Chat
   sl.registerFactory(

@@ -33,17 +33,24 @@ class ContactRemoteDataSourceImpl implements ContactRemoteDataSource {
     // และ error นั้นจะถูกจับใน Repository
   }
 
-  @override
+ @override
 Future<void> addContact(String currentUserId, String contactEmail) async {
   try {
-    // 1. ค้นหาผู้ใช้จากอีเมลใน Collection 'users'
+    print("Adding contact: $contactEmail for user: $currentUserId");
+    
+    // 1. ตรวจสอบว่า currentUser มี document ใน users collection หรือไม่
+    final currentUserDoc = await firestore.collection('users').doc(currentUserId).get();
+    if (!currentUserDoc.exists) {
+      throw ServerException(message: 'Current user profile not found. Please re-login.');
+    }
+    
+    // 2. ค้นหาผู้ใช้จากอีเมล
     final userQuery = await firestore
         .collection('users')
         .where('email', isEqualTo: contactEmail)
         .limit(1)
         .get();
 
-    // 2. ตรวจสอบว่าพบผู้ใช้หรือไม่
     if (userQuery.docs.isEmpty) {
       throw ServerException(message: 'User with this email does not exist.');
     }
@@ -51,44 +58,37 @@ Future<void> addContact(String currentUserId, String contactEmail) async {
     final contactDoc = userQuery.docs.first;
     final contactId = contactDoc.id;
     final contactData = contactDoc.data();
-    final contactName = contactData['username'] ?? contactEmail; // ใช้ username หรือ email เป็นชื่อ
+    final contactName = contactData['username'] ?? contactEmail;
 
-    // 3. ป้องกันการเพิ่มตัวเองเป็นผู้ติดต่อ
     if (contactId == currentUserId) {
       throw ServerException(message: 'You cannot add yourself as a contact.');
     }
 
-    // 4. เพิ่มผู้ติดต่อเข้าไปใน Collection ย่อย 'contacts' ของผู้ใช้ปัจจุบัน
+    // 3. เพิ่มผู้ติดต่อ
     final currentUserContactsRef = firestore
         .collection('users')
         .doc(currentUserId)
         .collection('contacts');
     
-    // ตรวจสอบว่าผู้ติดต่อถูกเพิ่มไปแล้วหรือยัง
-    final existingContact = await currentUserContactsRef
-        .doc(contactId)
-        .get();
-
+    final existingContact = await currentUserContactsRef.doc(contactId).get();
     if (existingContact.exists) {
         throw ServerException(message: 'Contact already exists.');
     }
 
-    // เพิ่มผู้ติดต่อใหม่
     await currentUserContactsRef.doc(contactId).set({
       'name': contactName,
       'email': contactEmail,
       'addedAt': FieldValue.serverTimestamp(),
     });
+    
+    print("Contact added successfully");
 
-  } on FirebaseException catch (e) {
-    // จัดการข้อผิดพลาดที่มาจาก Firebase
-    throw ServerException(message: e.message ?? 'An unknown Firebase error occurred.');
-  } on ServerException {
-    // ส่งต่อ ServerException ที่สร้างขึ้นเอง
-    rethrow;
   } catch (e) {
-    // จัดการข้อผิดพลาดอื่นๆ ที่ไม่คาดคิด
-    throw ServerException(message: 'An unexpected error occurred: ${e.toString()}');
+    print("Error adding contact: $e");
+    if (e is ServerException) {
+      rethrow;
+    }
+    throw ServerException(message: 'Failed to add contact: ${e.toString()}');
   }
 }
 }
