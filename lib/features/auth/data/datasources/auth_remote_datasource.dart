@@ -46,29 +46,41 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  @override
-  Future<UserModel> signUp(String email, String password) async {
-    try {
-      final userCredential = await firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      if (userCredential.user == null) {
-        throw AuthException("No user found after sign up.");
-      }
-      // เพิ่มการสร้าง user document ใน Firestore
-      final user = userCredential.user!;
-      await firestore.collection('users').doc(user.uid).set({
-        'email': email,
-        'username': email.split('@')[0], // ใช้ส่วนหน้า @ เป็น username
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      return UserModel.fromFirebaseUser(userCredential.user!);
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(e.message ?? 'Sign Up Failed');
+@override
+Future<UserModel> signUp(String email, String password) async {
+  try {
+    final userCredential = await firebaseAuth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    if (userCredential.user == null) {
+      throw AuthException("No user found after sign up.");
     }
+    
+    final user = userCredential.user!;
+    final username = email.split('@')[0];
+    
+    // สร้าง private user document
+    await firestore.collection('users').doc(user.uid).set({
+      'email': email,
+      'username': username,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    
+    // สร้าง public user document สำหรับค้นหา
+    await firestore.collection('public_users').doc(user.uid).set({
+      'email': email,
+      'username': username,
+      'uid': user.uid,
+    });
+    
+    return UserModel.fromFirebaseUser(user);
+  } on FirebaseAuthException catch (e) {
+    throw AuthException(e.message ?? 'Sign Up Failed');
+  } catch (e) {
+    throw AuthException('Failed to create user profile: $e');
   }
+}
 
   @override
   Future<void> signOut() async {
